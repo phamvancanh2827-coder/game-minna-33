@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Minna Quiz - Bài 33</title>
+    
+    <!-- Tích hợp Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            animation: {
+              'spin-slow': 'spin 3s linear infinite',
+            }
+          }
+        }
+      }
+    </script>
+
+    <!-- Tích hợp thư viện React và Babel để chạy trực tiếp trên trình duyệt -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+      body {
+        background-color: #1a1a1a;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+      /* Đảm bảo ruby hiển thị chuẩn */
+      ruby {
+        ruby-align: center;
+      }
+    </style>
+</head>
+<body>
+    <div id="root" class="w-full"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- BỘ CÂU HỎI (60 CÂU - ĐÃ BỔ SUNG FULL FURIGANA) ---
+        const quizData = [
+          // TỪ VỰNG
+          { q: 'Từ vựng: "Chạy trốn" tiếng Nhật là gì?', options: ["{逃|に}げます", "{騒|さわ}ぎます", "{諦|あきら}めます", "{投|な}げます"], a: 0 },
+          { q: 'Từ vựng: "Làm ồn" tiếng Nhật là gì?', options: ["{投|な}げます", "{騒|さわ}ぎます", "{守|まも}ります", "{伝|つた}えます"], a: 1 },
+          { q: 'Từ vựng: "Từ bỏ" tiếng Nhật là gì?', options: ["{注意|ちゅうい}します", "{外|はず}します", "{戻|もど}ります", "{諦|あきら}めます"], a: 3 },
+          { q: 'Từ vựng: "Ném" tiếng Nhật là gì?', options: ["{投|な}げます", "{逃|に}げます", "{騒|さわ}ぎます", "{守|まも}ります"], a: 0 },
+          { q: 'Từ vựng: "Bảo vệ, tuân thủ" tiếng Nhật là gì?', options: ["{諦|あきら}めます", "{守|まも}ります", "{伝|つた}えます", "{始|はじ}まります"], a: 1 },
+          { q: 'Từ vựng: "Bắt đầu" tiếng Nhật là gì?', options: ["{戻|もど}ります", "{始|はじ}まります", "{出席|しゅっせき}します", "{外|はず}します"], a: 1 },
+          { q: 'Từ vựng: "Tham dự" tiếng Nhật là gì?', options: ["{出席|しゅっせき}します", "{注意|ちゅうい}します", "{伝|つた}えます", "{投|な}げます"], a: 0 },
+          { q: 'Từ vựng: "Truyền đạt" tiếng Nhật là gì?', options: ["{諦|あきら}めます", "{守|まも}ります", "{伝|つた}えます", "{逃|に}げます"], a: 2 },
+          { q: 'Từ vựng: "Chú ý" tiếng Nhật là gì?', options: ["{注意|ちゅうい}します", "{外|はず}します", "{戻|もど}ります", "{始|はじ}まります"], a: 0 },
+          { q: 'Từ vựng: "Rời (ghế)" tiếng Nhật là gì?', options: ["{戻|もど}ります", "{外|はず}します", "{騒|さわ}ぎます", "{出席|しゅっせき}します"], a: 1 },
+          { q: 'Từ vựng: "Quay lại" tiếng Nhật là gì?', options: ["{戻|もど}ります", "{伝|つた}えます", "{守|まも}ります", "{逃|に}げます"], a: 0 },
+          { q: 'Ý nghĩa của "{警察|けいさつ}" là gì?', options: ["Cảnh sát", "Quy tắc", "Ký hiệu", "Chỗ ngồi"], a: 0 },
+          { q: 'Ý nghĩa của "{使用禁止|しようきんし}" là gì?', options: ["Cấm vào", "Cấm đỗ xe", "Cấm sử dụng", "Miễn phí"], a: 2 },
+          { q: 'Ý nghĩa của "{立入禁止|たちいりきんし}" là gì?', options: ["Cấm sử dụng", "Cấm vào", "Giảm tốc độ", "Hạn chót"], a: 1 },
+          { q: 'Ý nghĩa của "{徐行|じょこう}" là gì?', options: ["Giảm tốc độ", "Lối vào", "Lối ra", "Giảm giá"], a: 0 },
+          { q: 'Ý nghĩa của "{入口|いりぐち}" là gì?', options: ["Lối ra", "Lối thoát hiểm", "Lối vào", "Chỗ ngồi"], a: 2 },
+          { q: 'Ý nghĩa của "{出口|でぐち}" là gì?', options: ["Lối vào", "Lối ra", "Miễn phí", "Ký hiệu"], a: 1 },
+          { q: 'Ý nghĩa của "{非常口|ひじょうぐち}" là gì?', options: ["Tiền phạt", "Lối thoát hiểm", "Lối ra", "Giảm giá"], a: 1 },
+          { q: 'Ý nghĩa của "{無料|むりょう}" là gì?', options: ["Miễn phí", "Giảm giá", "Uống thỏa thích", "Đang tuyển"], a: 0 },
+          { q: 'Ý nghĩa của "{割引|わりびき}" là gì?', options: ["Đang sử dụng", "Miễn phí", "Tiền phạt", "Giảm giá"], a: 3 },
+          { q: 'Ý nghĩa của "{飲|の}み{放題|ほうだい}" là gì?', options: ["Ăn thỏa thích", "Uống thỏa thích", "Miễn phí", "Giảm tốc độ"], a: 1 },
+          { q: 'Ý nghĩa của "{使用中|しようちゅう}" là gì?', options: ["Đang tuyển", "Đang sử dụng", "Cấm sử dụng", "Tiền phạt"], a: 1 },
+          { q: 'Ý nghĩa của "{募集中|ぼしゅうちゅう}" là gì?', options: ["Cấm vào", "Đang sử dụng", "Đang tuyển", "Hạn chót"], a: 2 },
+          { q: 'Ý nghĩa của "{駐車違反|ちゅうしゃいはん}" là gì?', options: ["Cấm đỗ xe", "Vi phạm đỗ xe", "Cấm vào", "Cảnh sát"], a: 1 },
+          { q: 'Ý nghĩa của "{罰金|ばっきん}" là gì?', options: ["Miễn phí", "Giảm giá", "Tiền phạt", "Lối ra"], a: 2 },
+          { q: 'Từ vựng: "Nguy hiểm" tiếng Nhật là gì?', options: ["{危険|きけん}な", "だめな", "おなじ", "{無料|むりょう}"], a: 0 },
+          { q: 'Từ vựng: "Không được" tiếng Nhật là gì?', options: ["おなじ", "だめな", "{危険|きけん}な", "{規則|きそく}"], a: 1 },
+          { q: 'Từ vựng: "Giống nhau" tiếng Nhật là gì?', options: ["だめな", "{危険|きけん}な", "おなじ", "マーク"], a: 2 },
+          { q: 'Từ vựng: "Quy tắc" tiếng Nhật là gì?', options: ["{規則|きそく}", "{席|せき}", "{締|し}め{切|き}り", "{罰金|ばっきん}"], a: 0 },
+          { q: 'Từ vựng: "Hạn chót" tiếng Nhật là gì?', options: ["マーク", "{締|し}め{切|き}り", "{席|せき}", "{規則|きそく}"], a: 1 },
+          { q: 'Từ vựng: "Ký hiệu" tiếng Nhật là gì?', options: ["マーク", "ボール", "{席|せき}", "{規則|きそく}"], a: 0 },
+          { q: 'Từ vựng: "Chỗ ngồi" tiếng Nhật là gì?', options: ["おなじ", "ボール", "{席|せき}", "マーク"], a: 2 },
+          { q: 'Từ vựng: "Quả bóng" tiếng Nhật là gì?', options: ["マーク", "{席|せき}", "ボール", "{規則|きそく}"], a: 2 },
+          
+          // NGỮ PHÁP - THỂ MỆNH LỆNH
+          { q: 'Chuyển sang Thể mệnh lệnh: "{書|か}きます" (Viết)', options: ["{書|か}け", "{書|か}きろ", "{書|か}く", "{書|か}こ"], a: 0 },
+          { q: 'Chuyển sang Thể mệnh lệnh: "{泳|およ}ぎます" (Bơi)', options: ["{泳|およ}がれ", "{泳|およ}ぐな", "{泳|およ}げ", "{泳|およ}ぎろ"], a: 2 },
+          { q: 'Chuyển sang Thể mệnh lệnh: "{飲|の}みます" (Uống)', options: ["{飲|の}め", "{飲|の}むな", "{飲|の}まれ", "{飲|の}みろ"], a: 0 },
+          { q: 'Chuyển sang Thể mệnh lệnh: "{待|ま}ちます" (Đợi)', options: ["{待|ま}たれ", "{待|ま}つな", "{待|ま}て", "{待|ま}ちろ"], a: 2 },
+          { q: 'Chuyển sang Thể mệnh lệnh: "{急|いそ}ぎます" (Khẩn trương)', options: ["{急|いそ}ぐな", "{急|いそ}げ", "{急|いそ}がれ", "{急|いそ}ぎろ"], a: 1 },
+          { q: 'Chuyển sang Thể mệnh lệnh: "{遊|あそ}びます" (Chơi)', options: ["{遊|あそ}ぶな", "{遊|あそ}ばれ", "{遊|あそ}びろ", "{遊|あそ}べ"], a: 3 },
+          { q: 'Chuyển sang Thể mệnh lệnh: "{呼|よ}びます" (Gọi)', options: ["{呼|よ}べ", "{呼|よ}ぶな", "{呼|よ}ばれ", "{呼|よ}びろ"], a: 0 },
+          { q: 'Chuyển sang Thể mệnh lệnh: "{食|た}べます" (Ăn)', options: ["{食|た}べれ", "{食|た}べろ", "{食|た}べるな", "{食|た}べえ"], a: 1 },
+          { q: 'Chuyển sang Thể mệnh lệnh: "{見|み}ます" (Nhìn)', options: ["{見|み}れ", "{見|み}るな", "{見|み}え", "{見|み}ろ"], a: 3 },
+          { q: 'Chuyển sang Thể mệnh lệnh: "{起|お}きます" (Thức dậy)', options: ["{起|お}きれ", "{起|お}きろ", "{起|お}きえ", "{起|お}きるな"], a: 1 },
+          { q: 'Chuyển sang Thể mệnh lệnh: "{寝|ね}ます" (Ngủ)', options: ["{寝|ね}ろ", "{寝|ね}れ", "{寝|ね}え", "{寝|ね}るな"], a: 0 },
+          { q: 'Chuyển sang Thể mệnh lệnh: "{入|い}れます" (Cho vào)', options: ["{入|い}れるな", "{入|い}れれ", "{入|い}れろ", "{入|い}れえ"], a: 2 },
+          { q: 'Chuyển sang Thể mệnh lệnh: "します" (Làm)', options: ["すれ", "しろ", "せよ", "するな"], a: 1 },
+          { q: 'Chuyển sang Thể mệnh lệnh: "{来|き}ます" (Đến)', options: ["{来|こ}い", "くれ", "{来|き}ろ", "{来|く}るな"], a: 0 },
+          { q: 'Chuyển sang Thể mệnh lệnh: "{持|も}って{来|き}ます" (Mang đến)', options: ["{持|も}ってくれ", "{持|も}ってきろ", "{持|も}って{来|こ}い", "{持|も}って{来|く}るな"], a: 2 },
+          { q: 'Chuyển sang Thể mệnh lệnh: "{勉強|べんきょう}します" (Học)', options: ["{勉強|べんきょう}すれ", "{勉強|べんきょう}せよ", "{勉強|べんきょう}しろ", "{勉強|べんきょう}するな"], a: 2 },
+          
+          // NGỮ PHÁP - THỂ CẤM CHỈ & ỨNG DỤNG
+          { q: 'Chuyển sang Thể cấm chỉ: "{入|はい}ります" (Vào)', options: ["{入|はい}るな", "{入|はい}らない", "{入|はい}らな", "{入|はい}れない"], a: 0 },
+          { q: 'Chuyển sang Thể cấm chỉ: "{触|さわ}ります" (Chạm)', options: ["{触|さわ}らない", "{触|さわ}らな", "{触|さわ}るな", "{触|さわ}れな"], a: 2 },
+          { q: 'Chuyển sang Thể cấm chỉ: "{吸|す}います" (Hút)', options: ["{吸|す}わない", "{吸|す}うな", "{吸|す}わな", "{吸|す}えな"], a: 1 },
+          { q: 'Chuyển sang Thể cấm chỉ: "{食|た}べます" (Ăn)', options: ["{食|た}べない", "{食|た}べな", "{食|た}べるな", "{食|た}べろな"], a: 2 },
+          { q: 'Chuyển sang Thể cấm chỉ: "{負|ま}けます" (Thua)', options: ["{負|ま}けない", "{負|ま}けるな", "{負|ま}けな", "{負|ま}けろな"], a: 1 },
+          { q: 'Chuyển sang Thể cấm chỉ: "します" (Làm)', options: ["しない", "するな", "しな", "しろな"], a: 1 },
+          { q: 'Chuyển sang Thể cấm chỉ: "{来|き}ます" (Đến)', options: ["{来|こ}ない", "{来|く}るな", "{来|き}な", "{来|こ}いな"], a: 1 },
+          { q: 'Chuyển sang Thể cấm chỉ: "{忘|わす}れます" (Quên)', options: ["{忘|わす}れない", "{忘|わす}れな", "{忘|わす}れるな", "{忘|わす}れろな"], a: 2 },
+          { q: 'Chuyển sang Thể cấm chỉ: "{止|と}めます" (Dừng xe)', options: ["{止|と}めるな", "{止|と}めない", "{止|と}めな", "{止|と}めろな"], a: 0 },
+          { q: 'Chuyển sang Thể cấm chỉ: "{飲|の}みます" (Uống)', options: ["{飲|の}まない", "{飲|の}むな", "{飲|の}まな", "{飲|の}めな"], a: 1 },
+          { q: 'Ý nghĩa của câu: "{早|はや}く {起|お}きろ。"', options: ["Hãy ngủ sớm.", "Hãy thức dậy sớm.", "Không được ngủ.", "Không được thức dậy."], a: 1 },
+          { q: 'Ý nghĩa của câu: "エレベーターを {使|つか}うな。"', options: ["Hãy dùng thang máy.", "Không được dùng thang máy.", "Hãy sửa thang máy.", "Không được sửa thang máy."], a: 1 },
+          { q: 'Nói nhẹ nhàng hơn với tư cách bề trên: "{早|はや}く {寝|ね}ろ"', options: ["{早|はや}く{寝|ね}るな", "{早|はや}く{寝|ね}てくれ", "{早|はや}く{寝|ね}なさい", "{早|はや}く{寝|ね}ないでください"], a: 2 },
+          { q: 'Nói cấm đoán nhẹ nhàng hơn ở xưởng: "{少|すこ}し {手伝|てつだ}って"', options: ["{手伝|てつだ}いなさい", "{手伝|てつだ}ってくれ", "{手伝|てつだ}うな", "{手伝|てつだ}え"], a: 1 }
+        ];
+
+        // --- HÌNH ẢNH MARIO BẰNG SVG ---
+        const MarioSVG = ({ isSad }) => {
+          const pixels = [
+            "   RRRRR    ",
+            "  RRRRRRRRR ",
+            "  KKKYYYKY  ",
+            " KYKYYYKYYY ",
+            " KYKYYYKKKK ",
+            " KKKYYYYKKK ",
+            "   YYYYYYY  ",
+            "  RRBRRR    ",
+            " RRRBRRRR   ",
+            "RRRRBBRRRR  ",
+            "YY RBYB R YY",
+            "YYYBBBBBBYYY",
+            "  BBBBBB    ",
+            "  BB  BB    ",
+            " LLL  LLL   ",
+            "LLLL  LLLL  "
+          ];
+
+          const colorMap = isSad 
+            ? { 'R': '#777', 'Y': '#ccc', 'K': '#333', 'B': '#555', 'L': '#111' } 
+            : { 'R': '#E52521', 'Y': '#FFCC99', 'K': '#333333', 'B': '#00439C', 'L': '#5C3A21' }; 
+
+          return (
+            <svg width="120" height="160" viewBox="0 0 12 16" className="drop-shadow-lg">
+              {pixels.map((row, y) =>
+                row.split('').map((colorCode, x) => (
+                  colorCode !== ' ' && <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={colorMap[colorCode]} />
+                ))
+              )}
+            </svg>
+          );
+        };
+
+        const CoinSVG = () => (
+          <svg viewBox="0 0 24 24" className="w-8 h-8 inline-block animate-spin-slow drop-shadow-md">
+            <circle cx="12" cy="12" r="10" fill="#FDE047" stroke="#B45309" strokeWidth="2" />
+            <rect x="10" y="6" width="4" height="12" fill="#B45309" rx="1" />
+          </svg>
+        );
+
+        // --- ÂM THANH (AUDIO CONTEXT 8-BIT) ---
+        const playSound = (type) => {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContext) return;
+          const ctx = new AudioContext();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          if (type === 'coin') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(987.77, ctx.currentTime);
+            osc.frequency.setValueAtTime(1318.51, ctx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.3);
+          } else if (type === 'wrong') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.2, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.3);
+          } else if (type === 'start') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(440, ctx.currentTime);
+            osc.frequency.setValueAtTime(554, ctx.currentTime + 0.1);
+            osc.frequency.setValueAtTime(659, ctx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.4);
+          } else if (type === 'win') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(523.25, ctx.currentTime); 
+            osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.15); 
+            osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.3); 
+            osc.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.45); 
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.8);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.8);
+          }
+        };
+
+        // --- BỘ PHÂN TÍCH FURIGANA (ĐÃ CHUẨN HOÁ VỊ TRÍ) ---
+        // Cú pháp: {Chữ Hán|Furigana}
+        const parseText = (text) => {
+          if (typeof text !== 'string') return text;
+          const parts = text.split(/(\{.*?\})/g);
+          return parts.map((part, index) => {
+            if (part.startsWith('{') && part.endsWith('}')) {
+              const content = part.slice(1, -1);
+              const [kanji, furigana] = content.split('|');
+              // Đã gỡ bỏ class `block` của Tailwind, sử dụng thẻ chuẩn của HTML
+              return (
+                <ruby key={index} className="mx-[2px]">
+                  {kanji}
+                  <rt 
+                    className="text-[0.65em] text-white font-black tracking-tighter"
+                    style={{ textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000' }}
+                  >
+                    {furigana}
+                  </rt>
+                </ruby>
+              );
+            }
+            return <span key={index}>{part}</span>;
+          });
+        };
+
+        // --- COMPONENT CHÍNH ---
+        function MarioQuiz() {
+          const [gameState, setGameState] = useState('start'); 
+          const [questions, setQuestions] = useState([]);
+          const [currentQ, setCurrentQ] = useState(0);
+          const [score, setScore] = useState(0);
+          const [selectedAns, setSelectedAns] = useState(null);
+          const [isAnimating, setIsAnimating] = useState(false);
+          const [feedback, setFeedback] = useState(null); 
+
+          const startGame = () => {
+            playSound('start');
+            const shuffled = [...quizData].sort(() => 0.5 - Math.random());
+            setQuestions(shuffled);
+            setCurrentQ(0);
+            setScore(0);
+            setGameState('playing');
+            setFeedback(null);
+            setSelectedAns(null);
+          };
+
+          const handleAnswer = (index) => {
+            if (isAnimating) return;
+            
+            setSelectedAns(index);
+            setIsAnimating(true);
+            
+            const isCorrect = index === questions[currentQ].a;
+            setFeedback(isCorrect ? 'correct' : 'wrong');
+            
+            if (isCorrect) {
+              playSound('coin');
+              setScore(score + 10);
+            } else {
+              playSound('wrong');
+            }
+
+            setTimeout(() => {
+              setFeedback(null);
+              setIsAnimating(false);
+              setSelectedAns(null);
+              
+              if (currentQ < questions.length - 1) {
+                setCurrentQ(currentQ + 1);
+              } else {
+                playSound('win');
+                setGameState('end');
+              }
+            }, 1500); 
+          };
+
+          return (
+            <div className="w-full max-w-4xl mx-auto h-[100dvh] sm:h-[650px] relative overflow-hidden bg-[#5c94fc] sm:rounded-2xl shadow-2xl flex flex-col font-sans select-none sm:border-4 border-gray-800">
+              
+              {/* NỀN ĐÁM MÂY TRANG TRÍ */}
+              <div className="absolute top-10 left-10 w-24 h-8 bg-white/80 rounded-full blur-[2px]"></div>
+              <div className="absolute top-24 right-20 w-32 h-10 bg-white/80 rounded-full blur-[2px]"></div>
+              <div className="absolute top-16 left-1/2 w-20 h-6 bg-white/80 rounded-full blur-[2px]"></div>
+
+              {/* MÀN HÌNH BẮT ĐẦU */}
+              {gameState === 'start' && (
+                <div className="z-10 flex flex-col items-center justify-center h-full text-white drop-shadow-[2px_2px_0_#000] p-4">
+                  <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 text-center tracking-widest text-[#f8d070] stroke-black stroke-2">
+                    SUPER MINNA QUIZ
+                  </h1>
+                  <h2 className="text-xl sm:text-2xl font-bold mb-10 text-white text-center">Ôn tập Từ vựng & Ngữ pháp Bài 33</h2>
+                  <MarioSVG isSad={false} />
+                  <button 
+                    onClick={startGame}
+                    className="mt-8 px-6 py-4 bg-[#E52521] text-white font-bold text-xl sm:text-2xl rounded-xl border-b-8 border-red-900 hover:bg-red-500 hover:-translate-y-1 hover:border-b-[10px] active:border-b-4 active:translate-y-2 transition-all"
+                  >
+                    ▶ BẮT ĐẦU (60 CÂU)
+                  </button>
+                </div>
+              )}
+
+              {/* MÀN HÌNH CHƠI GAME */}
+              {gameState === 'playing' && (
+                <>
+                  {/* Header Stats */}
+                  <div className="flex justify-between p-4 font-extrabold text-white text-sm sm:text-xl drop-shadow-[2px_2px_0_#000] z-20">
+                    <div className="flex flex-col items-center">
+                      <span>ĐIỂM</span>
+                      <span>{score.toString().padStart(6, '0')}</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span>CÂU HỎI</span>
+                      <span>{currentQ + 1} / 60</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span>TIỀN XU</span>
+                      <span className="flex items-center gap-1"><CoinSVG /> x{score / 10}</span>
+                    </div>
+                  </div>
+
+                  {/* Thanh Tiến Độ */}
+                  <div className="w-[90%] mx-auto bg-black/50 h-3 rounded-full overflow-hidden mt-2 z-20">
+                    <div 
+                      className="bg-[#00a800] h-full transition-all duration-300"
+                      style={{ width: `${((currentQ) / 60) * 100}%` }}
+                    ></div>
+                  </div>
+
+                  {/* Bảng Câu Hỏi */}
+                  <div className="relative z-20 w-[90%] sm:w-[85%] mx-auto mt-6 bg-[#f8d070] border-4 border-[#c84c0c] p-4 sm:p-6 rounded-xl shadow-[inset_0_-6px_0_rgba(0,0,0,0.2)] text-center">
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#E52521] text-white px-4 py-1 rounded-full font-bold border-2 border-black drop-shadow-md">
+                      ?
+                    </div>
+                    <h2 className="text-xl sm:text-2xl font-bold text-black mt-2 leading-relaxed">
+                      {/* Bọc span để bảo vệ cấu trúc inline */}
+                      <span>{parseText(questions[currentQ].q)}</span>
+                    </h2>
+                  </div>
+
+                  {/* Grid Đáp Án */}
+                  <div className="relative z-20 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 w-[90%] sm:w-[85%] mx-auto mt-6">
+                    {questions[currentQ].options.map((opt, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleAnswer(i)}
+                        disabled={isAnimating}
+                        className={`
+                          p-3 sm:p-4 font-bold text-lg sm:text-xl rounded-lg border-4 transition-all duration-150 flex items-center justify-center min-h-[60px] sm:min-h-[80px]
+                          ${!isAnimating ? 'bg-[#c84c0c] border-[#702800] text-white hover:bg-[#e06117] hover:-translate-y-1 shadow-[0_4px_0_#501c00]' : ''}
+                          ${isAnimating && selectedAns === i && feedback === 'correct' ? 'bg-[#00a800] border-green-800 text-white scale-105 shadow-[0_0_20px_#00ff00]' : ''}
+                          ${isAnimating && selectedAns === i && feedback === 'wrong' ? 'bg-red-600 border-red-900 text-white' : ''}
+                          ${isAnimating && selectedAns !== i && questions[currentQ].a === i ? 'bg-[#00a800] border-green-800 text-white animate-pulse' : ''}
+                          ${isAnimating && selectedAns !== i && questions[currentQ].a !== i ? 'bg-gray-500 border-gray-700 text-gray-300 opacity-60' : ''}
+                        `}
+                      >
+                        {/* Bọc span để hiển thị một khối thống nhất khi dùng flexbox */}
+                        <span className="text-center block">{parseText(opt)}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Mario Character & Hiệu ứng */}
+                  <div className={`absolute bottom-[108px] left-4 sm:left-10 transition-transform duration-300 ease-out z-10 
+                    ${feedback === 'correct' ? '-translate-y-16 scale-110' : ''}
+                    ${feedback === 'wrong' ? 'scale-90 opacity-80' : ''}
+                    hidden sm:block
+                  `}>
+                    <MarioSVG isSad={feedback === 'wrong'} />
+                  </div>
+
+                  {/* Animation Cộng Điểm */}
+                  {feedback === 'correct' && (
+                    <div className="absolute bottom-[280px] left-1/2 sm:left-16 -translate-x-1/2 sm:translate-x-0 animate-bounce text-[#FDE047] font-extrabold text-4xl drop-shadow-[3px_3px_0_#000] z-30">
+                      +10 🪙
+                    </div>
+                  )}
+                  
+                  {/* Animation Sai */}
+                  {feedback === 'wrong' && (
+                    <div className="absolute bottom-[250px] left-1/2 sm:left-20 -translate-x-1/2 sm:translate-x-0 animate-pulse text-red-500 font-extrabold text-5xl drop-shadow-[3px_3px_0_#000] z-30">
+                      ❌
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* MÀN HÌNH KẾT THÚC */}
+              {gameState === 'end' && (
+                <div className="z-10 flex flex-col items-center justify-center h-full text-white drop-shadow-[2px_2px_0_#000] bg-black/40 backdrop-blur-sm p-4">
+                  <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 text-[#00a800] stroke-black stroke-2 text-center">
+                    HOÀN THÀNH!
+                  </h1>
+                  <div className="bg-[#f8d070] border-4 border-[#c84c0c] p-6 sm:p-8 rounded-2xl text-center text-black drop-shadow-none shadow-xl mb-8 w-full max-w-sm">
+                    <h2 className="text-xl sm:text-2xl font-bold mb-4">Kết quả Khóa Huấn Luyện</h2>
+                    <p className="text-3xl sm:text-4xl font-extrabold mb-2 text-[#E52521]">ĐIỂM: {score}</p>
+                    <p className="text-lg sm:text-xl font-bold flex items-center justify-center gap-2">
+                      <CoinSVG /> ĐÃ THU THẬP: {score / 10} XU
+                    </p>
+                    <p className="mt-4 font-bold text-base sm:text-lg text-gray-700">
+                      Bạn trả lời đúng {score / 10} / 60 câu!
+                    </p>
+                  </div>
+                  
+                  <button 
+                    onClick={startGame}
+                    className="px-6 py-4 bg-[#00a800] text-white font-bold text-xl sm:text-2xl rounded-xl border-b-8 border-green-900 hover:bg-green-500 hover:-translate-y-1 hover:border-b-[10px] active:border-b-4 active:translate-y-2 transition-all"
+                  >
+                    🔄 CHƠI LẠI TỪ ĐẦU
+                  </button>
+                </div>
+              )}
+
+              {/* MẶT ĐẤT (GROUND) */}
+              <div className="absolute bottom-0 w-full h-[110px] bg-[#c84c0c] border-t-[14px] border-[#00a800] z-0">
+                {/* Nét vẽ giả gạch */}
+                <div className="w-full h-full opacity-20" style={{ 
+                  backgroundImage: 'linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000)', 
+                  backgroundSize: '20px 20px', 
+                  backgroundPosition: '0 0, 10px 10px' 
+                }}></div>
+              </div>
+
+            </div>
+          );
+        }
+
+        // Render ứng dụng
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MarioQuiz />);
+    </script>
+</body>
+</html>
